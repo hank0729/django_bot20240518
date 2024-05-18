@@ -1,5 +1,10 @@
 def get_unique_file_path(directory, filename):
-    
+    """
+    Generate a unique file path by appending a number if the file already exists.
+    :param directory: The directory in which to save the file.
+    :param filename: The initial file name.
+    :return: A unique file path.
+    """
     base, ext = os.path.splitext(filename)
     unique_path = os.path.join(directory, filename)
     
@@ -45,12 +50,14 @@ def callback(request):
                 result_df = results.pandas().xyxy[0]
                 results.save()
                 
+                # Ensure saved path and URL are consistent
                 detect_image_path = get_unique_file_path("static", image_name)
+                detect_image_name = os.path.basename(detect_image_path)
                 image = cv2.imread("./runs/detect/exp/image0.jpg")
                 cv2.imwrite(detect_image_path, image)
                 
                 # Ensure URLs are properly constructed
-                result_image_url = f"https://{domain}/{detect_image_path}"
+                result_image_url = f"https://{domain}/static/{detect_image_name}"
 
                 messages = [
                     ImageSendMessage(
