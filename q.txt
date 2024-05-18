@@ -33,8 +33,7 @@ def callback(request):
                 line_id = event.source.user_id
                 image_content = line_bot_api.get_message_content(event.message.id)
                 image_name = line_id + ".png"
-                base_path = "./static/" + image_name
-                unique_path = get_unique_file_path(base_path)
+                unique_path = get_unique_file_path("./static/" + image_name)
                 
                 with open(unique_path, "wb") as fd:
                     for chunk in image_content.iter_content():
@@ -45,14 +44,14 @@ def callback(request):
                 results = model(img)
                 result_df = results.pandas().xyxy[0]
                 results.save()
+                result_image_path = get_unique_file_path(f"./static/{line_id}.png")
                 image = cv2.imread("./runs/detect/exp/image0.jpg")
-                final_path = get_unique_file_path(f"./static/{line_id}.png")
-                cv2.imwrite(final_path, image)
+                cv2.imwrite(result_image_path, image)
                 
                 messages = [
                     ImageSendMessage(
-                        original_content_url=domain + final_path,
-                        preview_image_url=domain + final_path,
+                        original_content_url=domain + result_image_path,
+                        preview_image_url=domain + result_image_path,
                     )
                 ]
                 
