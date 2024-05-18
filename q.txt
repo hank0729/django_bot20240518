@@ -1,5 +1,5 @@
 def get_unique_file_path(directory, filename):
-
+    
     base, ext = os.path.splitext(filename)
     unique_path = os.path.join(directory, filename)
     
@@ -44,8 +44,7 @@ def callback(request):
                 results = model(img)
                 result_df = results.pandas().xyxy[0]
                 results.save()
-                result_image_name = os.path.basename(unique_path)
-                result_image_path = os.path.join("static", result_image_name)
+                
                 detect_image_path = get_unique_file_path("static", image_name)
                 image = cv2.imread("./runs/detect/exp/image0.jpg")
                 cv2.imwrite(detect_image_path, image)
