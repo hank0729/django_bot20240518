@@ -33,7 +33,7 @@ def callback(request):
                 line_id = event.source.user_id
                 image_content = line_bot_api.get_message_content(event.message.id)
                 image_name = f"{line_id}.png"
-                unique_path = get_unique_file_path("./static", image_name)
+                unique_path = get_unique_file_path("static", image_name)  # Use "static" instead of "./static"
                 
                 with open(unique_path, "wb") as fd:
                     for chunk in image_content.iter_content():
@@ -44,12 +44,12 @@ def callback(request):
                 results = model(img)
                 result_df = results.pandas().xyxy[0]
                 results.save()
-                result_image_path = get_unique_file_path("./static", image_name)
+                result_image_path = get_unique_file_path("static", image_name)  # Use "static" instead of "./static"
                 image = cv2.imread("./runs/detect/exp/image0.jpg")
                 cv2.imwrite(result_image_path, image)
                 
                 # Ensure URLs are properly constructed
-                result_image_url = domain + result_image_path.replace("./static", "static")
+                result_image_url = f"https://{domain}/{result_image_path.replace('static', 'static')}"
 
                 messages = [
                     ImageSendMessage(
@@ -100,7 +100,7 @@ def callback(request):
                     )
                     df = pd.concat([df, new_line], ignore_index=True)
                     df.to_excel("./datasets/label.xlsx", index=False)
-                    image = cv2.imread(f"./static/{line_id}.png")
+                    image = cv2.imread(f"static/{line_id}.png")
                     cv2.imwrite(f"./datasets/images/{T}.png", image)
                 else:
                     user_message = event.message.text
@@ -133,7 +133,7 @@ def callback(request):
                     threemonth_key=new_three_month.id
                 )
 
-                home_url = "https://" + f"{settings.NGROK_HOST}/{line_id}/home/"
+                home_url = f"https://{settings.NGROK_HOST}/{line_id}/home/"
                 line_bot_api.push_message(line_id, TextSendMessage(text=home_url))
 
                 line_bot_api.reply_message(
