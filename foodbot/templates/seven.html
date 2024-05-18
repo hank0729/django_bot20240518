@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>問卷調查</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .card {
+            background-color: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .card input[type="number"], .card input[type="text"], .card select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .card input[type="radio"] {
+            margin-right: 5px;
+        }
+        .question-image {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 4px;
+        }
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h2>問卷調查</h2>
+
+<form name="surveyForm" method="POST" action="{% url 'handle_submission' key=seven_key view_type='seven' %}" onsubmit="return validateForm()">
+    {% csrf_token %}
+    <div class="card">
+        <label for="q1">您每週吃幾次早餐？
+        </label>
+        <input type="number" id="q1" name="q1" min="0" max="7">
+    </div>
+
+    <div class="card">
+        <label for="q2">您每週吃幾次宵夜?
+        </label>
+        <input type="number" id="q2" name="q2" min="0" max="7">
+    </div>
+
+    <div class="card">
+        <label for="q3">您每週飲酒幾次?
+        </label>
+        <input type="number" id="q3" name="q3" min="0" max="100">
+    </div>
+
+    <div class="card">
+        <label for="q4">請問你目前體重 單位公斤
+        </label>
+        <input type="number" id="q4" name="q4" min="0" max="500">
+    </div>
+
+    <div class="card">
+        <label for="q5">請問你的每週運動時間總共是幾小時
+        </label>
+        <input type="number" id="q5" name="q5" min="0" max="168">
+    </div>
+
+    <div class="card">
+        <label for="q6">請問你這一週的睡眠品質如何?
+            </label>
+        <input type="radio" name="q6" value="很好"> 很好<br>
+        <input type="radio" name="q6" value="好"> 好<br>
+        <input type="radio" name="q6" value="不好"> 不好 <br>
+        <input type="radio" name="q6" value="很不好"> 很不好 <br>
+    </div>
+
+    <div class="card">
+        <label>請問你這一週的情緒狀態是?
+        </label>
+        {% load static %}
+        <img src="{% static 'images/image.png' %}" alt="問題圖片" class="question-image">
+        <input type="radio" name="q7" value="開心/平靜"> 開心/平靜<br>
+        <input type="radio" name="q7" value="疑惑"> 疑惑<br>
+        <input type="radio" name="q7" value="不開心"> 不開心<br>
+        <input type="radio" name="q7" value="煩厭"> 煩厭<br>
+        <input type="radio" name="q7" value="憤怒"> 憤怒<br>
+        <input type="radio" name="q7" value="暴怒"> 暴怒
+    </div>
+
+    <button type="submit" class="submit-button">提交</button>
+</form>
+
+<script>
+    function validateForm() {
+        const form = document.forms["surveyForm"];
+        const radioGroups = ["q6", "q7"];
+        const numberFields = ["q1", "q2", "q3", "q4", "q5"];
+
+        for (let group of radioGroups) {
+            const radios = form[group];
+            let selected = false;
+            for (let radio of radios) {
+                if (radio.checked) {
+                    selected = true;
+                    break;
+                }
+            }
+            if (!selected) {
+                alert("請回答所有問題！");
+                return false;
+            }
+        }
+
+        for (let field of numberFields) {
+            const value = form[field].value;
+            if (value === "" || value === null) {
+                alert("請回答所有問題！");
+                return false;
+            }
+        }
+
+        return true;
+    }
+</script>
+</body>
+</html>

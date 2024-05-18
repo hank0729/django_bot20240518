@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>問卷調查</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .card {
+            background-color: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .card input[type="number"], .card input[type="text"], .card select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .card input[type="radio"] {
+            margin-right: 5px;
+        }
+        .question-image {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 4px;
+        }
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+   
+</head>
+<body>
+
+<h2>問卷調查</h2>
+
+{% if first_key %}
+<form name="surveyForm" method="POST" action="{% url 'handle_submission' key=first_key view_type='first' %}" onsubmit="return validateForm()">
+    {% csrf_token %}
+    <div class="card">
+        <label for="q1">受試者同意書<br>
+            研究標題： [使用AI健康減重聊天機器人介入後，對於減重成效與對健康識能之影響]
+            
+            研究主持人： [張語恬]/國防醫學院 公共衛生系暨研究所研究簡介：此研究旨在運用公共衛生健康飲食觀念與AI科技趨勢做結合，針對健康識能及減重成效做系統性的分析，使用健康餐盤AI辨識了解普羅大眾的飲食習慣，再回饋飲食健康資訊，健康飲食可以增進身心健康。
+            納入條件：年齡大於18歲、BMI≧24 排除條件：1.患有精神疾病者2.現正懷孕者3.有診斷癌症者4.90天內有吃減肥藥者整個研究有後續的追蹤問卷，線上問卷(共分四個階段)加入前、加入後一個月、加入後兩個月、加入後三個月。我們誠摯邀請您參加這個研究。在參與前，請您仔細閱讀以下同意書。如果您同意參加，請在選項選取同意。我理解並同意參與這個研究，並知道以下內容：我自願參加這個研究，並且可以隨時撤回參與，無需提供理由。研究目的和內容已向我說明清楚，我已經有機會提出問題並獲得滿意答案。我明白研究可能涉及的風險。我明白我的參與將保持機密，我的個人信息將受到保護。我明白研究主持人將根據法律法規保留我的參與記錄，但我的身份將匿名化。我同意提供必要的資訊和數據，以協助研究的進行。我允許研究主持人使用我的資訊和數據以研究的目的，但不會公開我的身份。我理解我可以聯繫研究主持人以獲得關於研究的進一步信息。
+            <br>
+            我理解上述的內容，本人是否同意
+            </label>
+        <input type="radio" name="q1" value="同意"> 同意<br>
+        <input type="radio" name="q1" value="不同意"> 不同意<br>
+    </div>
+    <div class="card">
+        <label for="q2">生理性別   
+            </label>
+        <input type="radio" name="q2" value="男"> 男<br>
+        <input type="radio" name="q2" value="女"> 女<br>
+    </div>
+
+    <div class="card">
+        <label for="q3">您今年幾歲?
+        </label>
+        <input type="number" id="q3" name="q3" min="1" max="100">
+    </div>
+
+    <div class="card">
+        <label for="q4">教育程度     
+            </label>
+        <input type="radio" name="q4" value="國中小(含)以下"> 國中小(含)以下<br>
+        <input type="radio" name="q4" value="高中(職)"> 高中(職)<br>
+        <input type="radio" name="q4" value="專科"> 專科<br>
+        <input type="radio" name="q4" value="大學"> 大學 <br>
+        <input type="radio" name="q4" value="研究所"> 研究所<br>
+    </div>
+
+    <div class="card">
+        <label for="q5">工作狀態 
+            </label>
+        <input type="radio" name="q5" value="全職"> 全職<br>
+        <input type="radio" name="q5" value="兼職"> 兼職<br>
+        <input type="radio" name="q5" value="待業"> 待業<br>
+        <input type="radio" name="q5" value="退休"> 退休<br>
+    </div>
+    
+    <div class="card">
+        <label for="q6">婚姻狀況  
+            </label>
+        <input type="radio" name="q6" value="已婚"> 已婚<br>
+        <input type="radio" name="q6" value="未婚"> 未婚<br>
+        <input type="radio" name="q6" value="離婚"> 離婚 <br>
+        <input type="radio" name="q6" value="喪偶"> 喪偶 <br>
+    </div>
+    
+    <div class="card">
+        <label for="q7">居住地:開啟你使用手機的所在地
+                    </label>
+        <input type="text" id="q7" name="q7">
+    </div>
+
+    <div class="card">
+        <label for="q8">月收入(新台幣)
+            </label>
+        <input type="radio" name="q8" value="27,500元以下"> 27,500元以下<br>
+        <input type="radio" name="q8" value="27,501元 - 30,000元"> 27,501元 - 30,000元<br>
+        <input type="radio" name="q8" value="30,001元 - 45,000元"> 30,001元 - 45,000元<br>
+        <input type="radio" name="q8" value="45,001元 - 60,000元"> 45,001元 - 60,000元 <br>
+        <input type="radio" name="q8" value="60,001元 - 75,000元"> 60,001元 - 75,000元<br>
+        <input type="radio" name="q8" value="75,001以上"> 75,001以上<br>
+    </div>
+
+    <div class="card">
+        <label for="q9">您每週吃幾次早餐？
+        </label>
+        <input type="number" id="q9" name="q9" min="0" max="7">
+    </div>
+
+    <div class="card">
+        <label for="q10">您每週吃幾次宵夜?
+        </label>
+        <input type="number" id="q10" name="q10" min="0" max="7">
+    </div>
+
+    <div class="card">
+        <label for="q11">您每週飲酒幾次?
+        </label>
+        <input type="number" id="q11" name="q11" min="0" max="100">
+    </div>
+
+    <div class="card">
+        <label for="q12">慢性疾病(高血壓、高血脂、糖尿病、睡眠呼吸中止、心血管疾病)  
+            </label>
+        <input type="radio" name="q12" value="有"> 有<br>
+        <input type="radio" name="q12" value="沒有"> 沒有<br>
+    </div>
+
+    <div class="card">
+        <label for="q13">請問你目前體重 單位公斤
+        </label>
+        <input type="number" id="q13" name="q13" min="0" max="500">
+    </div>
+
+    <div class="card">
+        <label for="q14">請問你目前身高 單位公分
+
+        </label>
+        <input type="number" id="q14" name="q14" min="0" max="500">
+    </div>
+
+    <div class="card">
+        <label for="q15">請問你一天大概走幾步路?
+        </label>
+        <input type="number" id="q15" name="q15" min="0" max="50000">
+    </div>
+
+    <div class="card">
+        <label for="q16">請問你的每週運動時間總共是幾小時
+        </label>
+        <input type="number" id="q16" name="q16" min="0" max="168">
+    </div>
+
+    <div class="card">
+        <label for="q17">請問你的運動習慣  
+            </label>
+        <input type="radio" name="q17" value="沒有"> 沒有<br>
+        <input type="radio" name="q17" value="一週2次以下"> 一週2次以下<br>
+        <input type="radio" name="q17" value="一週3-5次"> 一週3-5次 <br>
+        <input type="radio" name="q17" value="一週6次以上"> 一週6次以上 <br>
+    </div>
+
+    <div class="card">
+        <label for="q18">每日久坐時數 
+            </label>
+        <input type="radio" name="q18" value="少於4小時"> 少於4小時<br>
+        <input type="radio" name="q18" value="4-8小時"> 4-8小時<br>
+        <input type="radio" name="q18" value="大於8小時"> 大於8小時 <br>
+    </div>
+
+    <div class="card">
+        <label for="q19">請問你這一週的睡眠品質如何?
+            </label>
+        <input type="radio" name="q19" value="很好"> 很好<br>
+        <input type="radio" name="q19" value="好"> 好<br>
+        <input type="radio" name="q19" value="不好"> 不好 <br>
+        <input type="radio" name="q19" value="很不好"> 很不好 <br>
+    </div>
+
+    <div class="card">
+        <label>請問你這一週的情緒狀態是?
+        </label>
+        {% load static %}
+        <img src="{% static 'images/image.png' %}" alt="問題圖片" class="question-image">
+        <input type="radio" name="q20" value="開心/平靜"> 開心/平靜<br>
+        <input type="radio" name="q20" value="疑惑"> 疑惑<br>
+        <input type="radio" name="q20" value="不開心"> 不開心<br>
+        <input type="radio" name="q20" value="煩厭"> 煩厭<br>
+        <input type="radio" name="q20" value="憤怒"> 憤怒<br>
+        <input type="radio" name="q20" value="暴怒"> 暴怒
+    </div>
+
+    <div class="card">
+        <label for="q21">國人對於減重目標設定，哪一個是錯誤選項？
+            </label>
+        <input type="radio" name="q21" value="每週減0.5公斤"> 每週減0.5公斤<br>
+        <input type="radio" name="q21" value="每日應減少500大卡"> 每日應減少500大卡<br>
+        <input type="radio" name="q21" value="減重飲食女性1,200~1,500大卡/天"> 減重飲食女性1,200~1,500大卡/天<br>
+        <input type="radio" name="q21" value="減重飲食男性1,700~2,000大卡/天"> 減重飲食男性1,700~2,000大卡/天 <br>
+    </div>
+
+    
+    <div class="card">
+        <label for="q22">睡眠不足對於肥胖之間的關係何者錯誤？
+            </label>
+        <input type="radio" name="q22" value="更容易產生飢餓感"> 更容易產生飢餓感<br>
+        <input type="radio" name="q22" value="會使新陳代謝變慢"> 會使新陳代謝變慢<br>
+        <input type="radio" name="q22" value="建議每天睡足七-九小時"> 建議每天睡足七-九小時<br>
+        <input type="radio" name="q22" value="睡眠不足會降低對高糖份、高熱量食物的偏好"> 睡眠不足會降低對高糖份、高熱量食物的偏好 <br>
+    </div>
+
+    <div class="card">
+        <label for="q23">哪一種進餐順序可以減重又不容易復胖?
+            </label>
+        <input type="radio" name="q23" value="蔬菜→湯→蛋白質→全穀根莖類→水果"> 蔬菜→湯→蛋白質→全穀根莖類→水果<br>
+        <input type="radio" name="q23" value="湯→蔬菜→蛋白質→全穀根莖類→水果"> 湯→蔬菜→蛋白質→全穀根莖類→水果<br>
+        <input type="radio" name="q23" value="水果→蔬菜→湯→蛋白質→全穀根莖類"> 水果→蔬菜→湯→蛋白質→全穀根莖類<br>
+        <input type="radio" name="q23" value="湯→蛋白質→全穀根莖類→蔬菜→水果"> 湯→蛋白質→全穀根莖類→蔬菜→水果 <br>
+    </div>
+
+    <div class="card">
+        <label for="q24">天天五蔬果是指每天至少要吃三份蔬菜與兩份水果下列何者敘述錯誤?
+            </label>
+        <input type="radio" name="q24" value="蔬菜一份大約是煮熟後半個飯碗的量"> 蔬菜一份大約是煮熟後半個飯碗的量<br>
+        <input type="radio" name="q24" value="選當季蔬菜可以大幅減少農藥量"> 選當季蔬菜可以大幅減少農藥量<br>
+        <input type="radio" name="q24" value="蘋果、番茄等水果，應盡量洗乾淨去皮吃"> 蘋果、番茄等水果，應盡量洗乾淨去皮吃<br>
+        <input type="radio" name="q24" value="水果一份相當於一個拳頭大小"> 水果一份相當於一個拳頭大小 <br>
+    </div>
+
+    <div class="card">
+        <label for="q25">哪種方式對於減重最有效？
+            </label>
+        <input type="radio" name="q25" value="有氧運動"> 有氧運動<br>
+        <input type="radio" name="q25" value="無氧運動"> 無氧運動<br>
+        <input type="radio" name="q25" value="(先)有氧運動+無氧運動"> (先)有氧運動+無氧運動<br>
+        <input type="radio" name="q25" value="(先)無氧運動+有氧運動"> (先)無氧運動+有氧運動 <br>
+    </div>
+
+    <div class="card">
+        <label for="q26">運動強度是依據身體在運動時感到吃力的程度換算成此時大約的心跳數作為判別，下列說明何者錯誤?
+            </label>
+        <input type="radio" name="q26" value="費力身體運動 (High-intensity Exercise)：持續從事10分鐘以上時，無法邊活動，邊跟人輕鬆說話。這類活動會讓身體感覺很累，呼吸和心跳比平常快很多，也會流很多汗。"> 費力身體運動 (High-intensity Exercise)：持續從事10分鐘以上時，無法邊活動，邊跟人輕鬆說話。這類活動會讓身體感覺很累，呼吸和心跳比平常快很多，也會流很多汗。<br>
+        <input type="radio" name="q26" value="中度身體運動 (Moderate-intensity Exercise)：持續從事10分鐘以上還能順暢地對話，但無法唱歌。這類活動會讓人覺得有點累，呼吸及心跳比平常快一些，也會流一些汗。"> 中度身體運動 (Moderate-intensity Exercise)：持續從事10分鐘以上還能順暢地對話，但無法唱歌。這類活動會讓人覺得有點累，呼吸及心跳比平常快一些，也會流一些汗。<br>
+        <input type="radio" name="q26" value="輕度身體運動 (Low-intensity Exercise)：不太費力的輕度身體活動，能列入每週150分鐘身體活動累積量"> 輕度身體運動 (Low-intensity Exercise)：不太費力的輕度身體活動，能列入每週150分鐘身體活動累積量<br>
+        <input type="radio" name="q26" value="坐式生活型態 (Sedentary)：僅止於靜態生活的內容，不能列入每週150分鐘身體活動累積量。"> 坐式生活型態 (Sedentary)：僅止於靜態生活的內容，不能列入每週150分鐘身體活動累積量。 <br>
+    </div>
+
+    <div class="card">
+        <label for="q27">請留下您常用的信箱方便抽獎
+        </label>
+        <input type="text" id="q27" name="q27">
+    </div>
+    
+    <button type="submit" class="submit-button" >提交</button>
+</form>
+{% else %}
+<p>Error: Missing key for form submission.</p>
+{% endif %}
+<script>
+    function validateForm() {
+        const form = document.forms["surveyForm"];
+        const radioGroups = ["q1", "q2", "q4", "q5", "q6", "q8", "q12", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25", "q26"];
+        const numberFields = ["q3", "q9", "q10", "q11", "q13", "q14", "q15", "q16"];
+        const textField = "q7";
+
+        for (let group of radioGroups) {
+            const radios = form[group];
+            let selected = false;
+            for (let radio of radios) {
+                if (radio.checked) {
+                    selected = true;
+                    break;
+                }
+            }
+            if (!selected) {
+                alert("請回答所有問題！");
+                return false;
+            }
+        }
+
+        for (let field of numberFields) {
+            const value = form[field].value;
+            if (value === "" || value === null) {
+                alert("請回答所有問題！");
+                return false;
+            }
+        }
+
+        if (form[textField].value.trim() === "") {
+            alert("請回答所有問題！");
+            return false;
+        }
+
+        return true;
+    }
+</script>
+</body>
+</html>

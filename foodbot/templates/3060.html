@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>問卷調查</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .card {
+            background-color: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .card input[type="number"], .card input[type="text"], .card select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .card input[type="radio"] {
+            margin-right: 5px;
+        }
+        .question-image {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            border-radius: 4px;
+        }
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<h2>問卷調查</h2>
+
+{% if main %}
+<form name="surveyForm" method="POST" action="{% url 'handle_submission' key=main.month_key view_type='month' %}" onsubmit="return validateForm()">
+    {% csrf_token %}
+    <div class="card">
+        <label for="q1">請問你目前體重 單位公斤</label>
+        <input type="number" id="q1" name="q1" min="0" max="500">
+    </div>
+
+    <div class="card">
+        <label for="q2">請問你一天大概走幾步路?</label>
+        <input type="number" id="q2" name="q2" min="0" max="50000">
+    </div>
+
+    <div class="card">
+        <label for="q3">請問你的運動習慣</label>
+        <input type="radio" name="q3" value="沒有"> 沒有<br>
+        <input type="radio" name="q3" value="一週2次以下"> 一週2次以下<br>
+        <input type="radio" name="q3" value="一週3-5次"> 一週3-5次 <br>
+        <input type="radio" name="q3" value="一週6次以上"> 一週6次以上 <br>
+    </div>
+
+    <div class="card">
+        <label for="q4">每日久坐時數</label>
+        <input type="radio" name="q4" value="少於4小時"> 少於4小時<br>
+        <input type="radio" name="q4" value="4-8小時"> 4-8小時<br>
+        <input type="radio" name="q4" value="大於8小時"> 大於8小時 <br>
+    </div>
+
+    <div class="card">
+        <label for="q5">國人對於減重目標設定，哪一個是錯誤選項？</label>
+        <input type="radio" name="q5" value="每週減0.5公斤"> 每週減0.5公斤<br>
+        <input type="radio" name="q5" value="每日應減少500大卡"> 每日應減少500大卡<br>
+        <input type="radio" name="q5" value="減重飲食女性1,200~1,500大卡/天"> 減重飲食女性1,200~1,500大卡/天<br>
+        <input type="radio" name="q5" value="減重飲食男性1,700~2,000大卡/天"> 減重飲食男性1,700~2,000大卡/天 <br>
+    </div>
+
+    <div class="card">
+        <label for="q6">睡眠不足對於肥胖之間的關係何者錯誤？</label>
+        <input type="radio" name="q6" value="更容易產生飢餓感"> 更容易產生飢餓感<br>
+        <input type="radio" name="q6" value="會使新陳代謝變慢"> 會使新陳代謝變慢<br>
+        <input type="radio" name="q6" value="建議每天睡足七-九小時"> 建議每天睡足七-九小時<br>
+        <input type="radio" name="q6" value="睡眠不足會降低對高糖份、高熱量食物的偏好"> 睡眠不足會降低對高糖份、高熱量食物的偏好 <br>
+    </div>
+
+    <div class="card">
+        <label for="q7">哪一種進餐順序可以減重又不容易復胖?</label>
+        <input type="radio" name="q7" value="蔬菜→湯→蛋白質→全穀根莖類→水果"> 蔬菜→湯→蛋白質→全穀根莖類→水果<br>
+        <input type="radio" name="q7" value="湯→蔬菜→蛋白質→全穀根莖類→水果"> 湯→蔬菜→蛋白質→全穀根莖類→水果<br>
+        <input type="radio" name="q7" value="水果→蔬菜→湯→蛋白質→全穀根莖類"> 水果→蔬菜→湯→蛋白質→全穀根莖類<br>
+        <input type="radio" name="q7" value="湯→蛋白質→全穀根莖類→蔬菜→水果"> 湯→蛋白質→全穀根莖類→蔬菜→水果 <br>
+    </div>
+
+    <div class="card">
+        <label for="q8">天天五蔬果是指每天至少要吃三份蔬菜與兩份水果下列何者敘述錯誤?</label>
+        <input type="radio" name="q8" value="蔬菜一份大約是煮熟後半個飯碗的量"> 蔬菜一份大約是煮熟後半個飯碗的量<br>
+        <input type="radio" name="q8" value="選當季蔬菜可以大幅減少農藥量"> 選當季蔬菜可以大幅減少農藥量<br>
+        <input type="radio" name="q8" value="蘋果、番茄等水果，應盡量洗乾淨去皮吃"> 蘋果、番茄等水果，應盡量洗乾淨去皮吃<br>
+        <input type="radio" name="q8" value="水果一份相當於一個拳頭大小"> 水果一份相當於一個拳頭大小 <br>
+    </div>
+
+    <div class="card">
+        <label for="q9">哪種方式對於減重最有效？</label>
+        <input type="radio" name="q9" value="有氧運動"> 有氧運動<br>
+        <input type="radio" name="q9" value="無氧運動"> 無氧運動<br>
+        <input type="radio" name="q9" value="(先)有氧運動+無氧運動"> (先)有氧運動+無氧運動<br>
+        <input type="radio" name="q9" value="(先)無氧運動+有氧運動"> (先)無氧運動+有氧運動 <br>
+    </div>
+
+    <div class="card">
+        <label for="q10">運動強度是依據身體在運動時感到吃力的程度換算成此時大約的心跳數作為判別，下列說明何者錯誤?</label>
+        <input type="radio" name="q10" value="費力身體運動 (High-intensity Exercise)：持續從事10分鐘以上時，無法邊活動，邊跟人輕鬆說話。這類活動會讓身體感覺很累，呼吸和心跳比平常快很多，也會流很多汗。"> 費力身體運動 (High-intensity Exercise)：持續從事10分鐘以上時，無法邊活動，邊跟人輕鬆說話。這類活動會讓身體感覺很累，呼吸和心跳比平常快很多，也會流很多汗。<br>
+        <input type="radio" name="q10" value="中度身體運動 (Moderate-intensity Exercise)：持續從事10分鐘以上還能順暢地對話，但無法唱歌。這類活動會讓人覺得有點累，呼吸及心跳比平常快一些，也會流一些汗。"> 中度身體運動 (Moderate-intensity Exercise)：持續從事10分鐘以上還能順暢地對話，但無法唱歌。這類活動會讓人覺得有點累，呼吸及心跳比平常快一些，也會流一些汗。<br>
+        <input type="radio" name="q10" value="輕度身體運動 (Low-intensity Exercise)：不太費力的輕度身體活動，能列入每週150分鐘身體活動累積量"> 輕度身體運動 (Low-intensity Exercise)：不太費力的輕度身體活動，能列入每週150分鐘身體活動累積量<br>
+        <input type="radio" name="q10" value="坐式生活型態 (Sedentary)：僅止於靜態生活的內容，不能列入每週150分鐘身體活動累積量。"> 坐式生活型態 (Sedentary)：僅止於靜態生活的內容，不能列入每週150分鐘身體活動累積量。 <br>
+    </div>
+
+    <button type="submit" class="submit-button">提交</button>
+</form>
+{% else %}
+<p>Error: Missing main object.</p>
+{% endif %}
+<script>
+    function validateForm() {
+        const form = document.forms["surveyForm"];
+        const radioGroups = ["q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10"];
+        const numberFields = ["q1", "q2"];
+
+        for (let group of radioGroups) {
+            const radios = form[group];
+            let selected = false;
+            for (let radio of radios) {
+                if (radio.checked) {
+                    selected = true;
+                    break;
+                }
+            }
+            if (!selected) {
+                alert("請回答所有問題！");
+                return false;
+            }
+        }
+
+        for (let field of numberFields) {
+            const value = form[field].value;
+            if (value === "" || value === null) {
+                alert("請回答所有問題！");
+                return false;
+            }
+        }
+
+        return true;
+    }
+</script>
+
+</body>
+</html>

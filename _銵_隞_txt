@@ -1,0 +1,12 @@
+C:\line\Scripts\activate.bat
+
+cd C:\Users\AS6757\Desktop\bot\bot
+
+pip install -r requirements.txt
+
+python manage.py runserver
+
+
+-------------------------
+
+ngrok http 80
