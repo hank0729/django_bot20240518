@@ -33,7 +33,7 @@ def callback(request):
                 line_id = event.source.user_id
                 image_content = line_bot_api.get_message_content(event.message.id)
                 image_name = f"{line_id}.png"
-                unique_path = get_unique_file_path("static", image_name)  # Use "static" instead of "./static"
+                unique_path = get_unique_file_path("static", image_name)
                 
                 with open(unique_path, "wb") as fd:
                     for chunk in image_content.iter_content():
@@ -44,12 +44,14 @@ def callback(request):
                 results = model(img)
                 result_df = results.pandas().xyxy[0]
                 results.save()
-                result_image_path = get_unique_file_path("static", image_name)  # Use "static" instead of "./static"
+                result_image_name = os.path.basename(unique_path)
+                result_image_path = os.path.join("static", result_image_name)
+                detect_image_path = get_unique_file_path("static", image_name)
                 image = cv2.imread("./runs/detect/exp/image0.jpg")
-                cv2.imwrite(result_image_path, image)
+                cv2.imwrite(detect_image_path, image)
                 
                 # Ensure URLs are properly constructed
-                result_image_url = f"https://{domain}/{result_image_path.replace('static', 'static')}"
+                result_image_url = f"https://{domain}/{detect_image_path}"
 
                 messages = [
                     ImageSendMessage(
@@ -100,7 +102,8 @@ def callback(request):
                     )
                     df = pd.concat([df, new_line], ignore_index=True)
                     df.to_excel("./datasets/label.xlsx", index=False)
-                    image = cv2.imread(f"static/{line_id}.png")
+                    image_path = get_unique_file_path("static", f"{line_id}.png")
+                    image = cv2.imread(image_path)
                     cv2.imwrite(f"./datasets/images/{T}.png", image)
                 else:
                     user_message = event.message.text
