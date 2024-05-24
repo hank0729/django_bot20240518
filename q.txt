@@ -1,155 +1,18 @@
-def get_unique_file_path(directory, filename):
-    """
-    Generate a unique file path by appending a number if the file already exists.
-    :param directory: The directory in which to save the file.
-    :param filename: The initial file name.
-    :return: A unique file path.
-    """
-    base, ext = os.path.splitext(filename)
-    unique_path = os.path.join(directory, filename)
+def handle_feedback(event):
+    line_id = event.source.user_id
+    df = pd.read_excel("./datasets/label.xlsx")
+    T = time.ctime(time.time()).replace(" ", "-").replace(":", "-")
+    new_line = pd.DataFrame({"Column1": [T], "Column2": [event.message.text]})
+    df = pd.concat([df, new_line], ignore_index=True)
+    df.to_excel("./datasets/label.xlsx", index=False)
+
+    image_path = get_unique_file_path("static", f"{line_id}.png")
     
-    if not os.path.exists(unique_path):
-        return unique_path
-
-    counter = 1
-    unique_path = os.path.join(directory, f"{base}({counter}){ext}")
-    
-    while os.path.exists(unique_path):
-        counter += 1
-        unique_path = os.path.join(directory, f"{base}({counter}){ext}")
-    
-    return unique_path
-
-@csrf_exempt
-def callback(request):
-    if request.method == "POST":
-        signature = request.META["HTTP_X_LINE_SIGNATURE"]
-        body = request.body.decode("utf-8")
-
-        try:
-            events = parser.parse(body, signature)  # Parse the events
-        except InvalidSignatureError:
-            return HttpResponseForbidden()
-        except LineBotApiError:
-            return HttpResponseBadRequest()
-
-        for event in events:
-            if isinstance(event, MessageEvent) and event.message.type == "image":
-                line_id = event.source.user_id
-                image_content = line_bot_api.get_message_content(event.message.id)
-                image_name = f"{line_id}.png"
-                unique_path = get_unique_file_path("static", image_name)
-                
-                with open(unique_path, "wb") as fd:
-                    for chunk in image_content.iter_content():
-                        fd.write(chunk)
-                
-                img = cv2.imread(unique_path)
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                results = model(img)
-                result_df = results.pandas().xyxy[0]
-                results.save()
-                
-                # Ensure saved path and URL are consistent
-                detect_image_path = get_unique_file_path("static", image_name)
-                detect_image_name = os.path.basename(detect_image_path)
-                image = cv2.imread("./runs/detect/exp/image0.jpg")
-                cv2.imwrite(detect_image_path, image)
-                
-                # Ensure URLs are properly constructed
-                result_image_url = f"https://{domain}/static/{detect_image_name}"
-
-                messages = [
-                    ImageSendMessage(
-                        original_content_url=result_image_url,
-                        preview_image_url=result_image_url,
-                    )
-                ]
-                
-                result_df["fat"] = result_df["name"].map(food_dict)
-                result_df["chinese_name"] = result_df["name"].map(food_name)
-                content = ""
-                
-                for i in range(len(result_df)):
-                    name = result_df["chinese_name"][i]
-                    fat = result_df["fat"][i]
-                    food_content = f"{name} 熱量為 {fat} 大卡(kcals)"
-                    content = content + food_content + "\n"
-                
-                total_fat = result_df["fat"].sum()
-                total_content = f"總共: {total_fat} 大卡(kcals)"
-                content = content + total_content
-                
-                messages.append(TextSendMessage(f"{content}"))
-                messages.append(
-                    TemplateSendMessage(
-                        alt_text="Buttons template",
-                        template=ButtonsTemplate(
-                            title="請問是否正確?",
-                            text="請問是否正確?",
-                            actions=[
-                                MessageTemplateAction(label="正確", text="正確"),
-                                MessageTemplateAction(label="錯誤", text="錯誤"),
-                            ],
-                        ),
-                    )
-                )
-                
-                shutil.rmtree("./runs")
-                line_bot_api.reply_message(event.reply_token, messages)
-            
-            elif isinstance(event, MessageEvent) and event.message.type == "text":
-                if event.message.text in ["正確", "錯誤"]:
-                    line_id = event.source.user_id
-                    df = pd.read_excel("./datasets/label.xlsx")
-                    T = time.ctime(time.time()).replace(" ", "-").replace(":", "-")
-                    new_line = pd.DataFrame(
-                        {"Column1": [T], "Column2": [event.message.text]}
-                    )
-                    df = pd.concat([df, new_line], ignore_index=True)
-                    df.to_excel("./datasets/label.xlsx", index=False)
-                    image_path = get_unique_file_path("static", f"{line_id}.png")
-                    image = cv2.imread(image_path)
-                    cv2.imwrite(f"./datasets/images/{T}.png", image)
-                else:
-                    user_message = event.message.text
-                    reply_msg = chatgpt.get_response(user_message)
-                    line_bot_api.reply_message(
-                        event.reply_token, TextSendMessage(text=reply_msg)
-                    )
-            
-            elif isinstance(event, FollowEvent):
-                line_id = event.source.user_id
-                days = 1
-                new_first = First.objects.create(lineid=line_id)
-                new_seven = Seven.objects.create(lineid=line_id)
-                new_month = Month.objects.create(lineid=line_id)
-                new_two_month = TwoMonth.objects.create(lineid=line_id)
-                new_three_month = ThreeMonth.objects.create(lineid=line_id)
-
-                main = Main.objects.create(
-                    lineid=line_id,
-                    days=days,
-                    first=new_first,
-                    first_key=new_first.id,
-                    seven=new_seven,
-                    seven_key=new_seven.id,
-                    month=new_month,
-                    month_key=new_month.id,
-                    twomonth=new_two_month,
-                    twomonth_key=new_two_month.id,
-                    threemonth=new_three_month,
-                    threemonth_key=new_three_month.id
-                )
-
-                home_url = f"https://{settings.NGROK_HOST}/{line_id}/home/"
-                line_bot_api.push_message(line_id, TextSendMessage(text=home_url))
-
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="感謝您加我好友!請幫忙填個問卷調查呦")
-                )
-
-        return HttpResponse()
+    if os.path.exists(image_path):
+        image = cv2.imread(image_path)
+        if image is not None and image.size > 0:
+            cv2.imwrite(f"./datasets/images/{T}.png", image)
+        else:
+            logger.error(f"Image read from {image_path} is empty or None.")
     else:
-        return HttpResponseBadRequest()
+        logger.error(f"Image path {image_path} does not exist.")
