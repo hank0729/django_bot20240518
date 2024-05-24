@@ -1,148 +1,43 @@
-from django.shortcuts import render, get_object_or_404
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-from django.conf import settings
-from linebot import LineBotApi, WebhookHandler, WebhookParser
-from linebot.exceptions import InvalidSignatureError, LineBotApiError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, FollowEvent, ImageSendMessage, TemplateSendMessage, ButtonsTemplate, MessageTemplateAction
-import logging
-import time
-import torch
-import cv2
-import shutil
-import pandas as pd
-import os
-from datetime import datetime
-from random import choices
-import string
-from openai import OpenAI
-from .models import UserMessage, Main, First, Seven, Month, TwoMonth, ThreeMonth
-
-
-domain = "https://7beb-150-129-74-189.ngrok-free.app/"
-
-max_tokens = 500
-temperature = 0
-
-line_bot_api = LineBotApi(settings.LINE_CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(settings.LINE_CHANNEL_SECRET)
-parser = WebhookParser(settings.LINE_CHANNEL_SECRET)
-
-logger = logging.getLogger(__name__)
-chat_language = os.getenv("INIT_LANGUAGE", default="zh")
-
-conversation = []
-
-class ChatGPT:
-    def __init__(self, max_tokens, temperature):
-        self.messages = conversation
-        self.model = os.getenv("OPENAI_MODEL", default="gpt-3.5-turbo")
-        self.max_tokens = max_tokens
-        self.temperature = temperature
-
-    def get_response(self, user_input):
-        client = OpenAI(api_key=OPENAI_API_KEY)
-
-        conversation = [{"role": "system", "content": '你是一個專業的醫療人員，請用已知的知識回答以下問題，若遇到不會的問題，請回答不清楚，請用繁體中文回答。'}, {"role": "user", "content": user_input}]
-
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=conversation,
-            temperature=self.temperature,
-            max_tokens=self.max_tokens,
-        )
-
-        print("AI回答內容：")
-        print(response.choices[0].message.content)
-
-        return response.choices[0].message.content
-
-
-chatgpt = ChatGPT(max_tokens, temperature)
-
-# 設定模型與資料導入
-model_path = "./best.pt"
-food_data = pd.read_excel("./food_data.xlsx")
-food_dict = dict(food_data[["name", "fat"]].values)
-food_name = dict(food_data[["name", "chinese_name"]].values)
-model = torch.hub.load("ultralytics/yolov5", "custom", path=model_path)
-
-@csrf_exempt
-def callback(request):
-    if request.method == "POST":
-        signature = request.META["HTTP_X_LINE_SIGNATURE"]
-        body = request.body.decode("utf-8")
-
-        try:
-            events = parser.parse(body, signature)  
-        except InvalidSignatureError:
-            return HttpResponseForbidden()
-        except LineBotApiError:
-            return HttpResponseBadRequest()
-
-        for event in events:
-            if isinstance(event, MessageEvent):
-                handle_message_event(event)
-            elif isinstance(event, FollowEvent):
-                handle_follow_event(event)
-
-        return HttpResponse()
-    else:
-        return HttpResponseBadRequest()
-
-def handle_message_event(event):
-    if event.message.type == "image":
-        handle_image_message(event)
-    elif event.message.type == "text":
-        handle_text_message(event)
-
-def handle_text_message(event):
-    user_message = UserMessage(line_id=event.source.user_id, message_text=event.message.text)
-    user_message.save()
-
-    if event.message.text in ["正確", "錯誤"]:
-        handle_feedback(event)
-    else:
-        user_message = event.message.text
-        reply_msg = chatgpt.get_response(user_message)
-        try:
-            line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_msg))
-        except LineBotApiError as e:
-            logger.error(f"LineBotApiError: {e}")
-            line_bot_api.push_message(event.source.user_id, TextSendMessage(text=reply_msg))
-
 def handle_image_message(event):
     line_id = event.source.user_id
     image_content = line_bot_api.get_message_content(event.message.id)
     image_name = f"{line_id}.png"
     unique_path = get_unique_file_path("static", image_name)
 
+    # Save the received image
     with open(unique_path, "wb") as fd:
         for chunk in image_content.iter_content():
             fd.write(chunk)
 
+    # Read the saved image
     img = cv2.imread(unique_path)
     if img is None:
         logger.error(f"Failed to read image from {unique_path}")
         return
 
+    # Process the image using the model
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = model(img)
     result_df = results.pandas().xyxy[0]
     results.save()
 
+    # Get the new unique path for the processed image
     detect_image_path = get_unique_file_path("static", image_name)
     detect_image_name = os.path.basename(detect_image_path)
+
+    # Read and save the processed image
     detected_image = cv2.imread("./runs/detect/exp/image0.jpg")
     if detected_image is None:
         logger.error("Failed to read detected image.")
         return
 
+    # Save the new processed image with a unique name
     cv2.imwrite(detect_image_path, detected_image)
 
+    # Create the image URL to send
     result_image_url = f"{domain}static/{detect_image_name}"
 
+    # Create messages to send
     messages = [
         ImageSendMessage(
             original_content_url=result_image_url,
@@ -150,6 +45,7 @@ def handle_image_message(event):
         )
     ]
 
+    # Generate text content for detected items
     result_df["fat"] = result_df["name"].map(food_dict)
     result_df["chinese_name"] = result_df["name"].map(food_name)
     content = ""
@@ -158,11 +54,11 @@ def handle_image_message(event):
         name = result_df["chinese_name"][i]
         fat = result_df["fat"][i]
         food_content = f"{name} 熱量為 {fat} 大卡(kcals)"
-        content = content + food_content + "\n"
+        content += food_content + "\n"
 
     total_fat = result_df["fat"].sum()
     total_content = f"總共: {total_fat} 大卡(kcals)"
-    content = content + total_content
+    content += total_content
 
     messages.append(TextSendMessage(f"{content}"))
     messages.append(
@@ -179,59 +75,15 @@ def handle_image_message(event):
         )
     )
 
+    # Clean up the runs directory
     shutil.rmtree("./runs")
+
+    # Send the messages
     try:
         line_bot_api.reply_message(event.reply_token, messages)
     except LineBotApiError as e:
         logger.error(f"LineBotApiError: {e}")
         line_bot_api.push_message(event.source.user_id, messages)
-
-def handle_feedback(event):
-    line_id = event.source.user_id
-    df = pd.read_excel("./datasets/label.xlsx")
-    T = time.ctime(time.time()).replace(" ", "-").replace(":", "-")
-    new_line = pd.DataFrame({"Column1": [T], "Column2": [event.message.text]})
-    df = pd.concat([df, new_line], ignore_index=True)
-    df.to_excel("./datasets/label.xlsx", index=False)
-    image_path = get_unique_file_path("static", f"{line_id}.png")
-    image = cv2.imread(image_path)
-    if image is None:
-        logger.error(f"Failed to read image from {image_path}")
-        return
-    cv2.imwrite(f"./datasets/images/{T}.png", image)
-
-def handle_follow_event(event):
-    line_id = event.source.user_id
-
-    days = 1
-    new_first = First.objects.create(lineid=line_id)  
-    new_seven = Seven.objects.create(lineid=line_id)
-    new_month = Month.objects.create(lineid=line_id)
-    new_two_month = TwoMonth.objects.create(lineid=line_id)
-    new_three_month = ThreeMonth.objects.create(lineid=line_id)
-
-    main = Main.objects.create(
-        lineid=line_id,
-        days=days,
-        first=new_first,
-        first_key=new_first.id,  
-        seven=new_seven,
-        seven_key=new_seven.id,
-        month=new_month,
-        month_key=new_month.id,
-        twomonth=new_two_month,
-        twomonth_key=new_two_month.id,
-        threemonth=new_three_month,
-        threemonth_key=new_three_month.id
-    )
-
-    home_url = f"{settings.NGROK_HOST}/{line_id}/home/"
-    line_bot_api.push_message(line_id, TextSendMessage(text=home_url))
-
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text="Thank you for adding me as a friend!")
-    )
 
 def get_unique_file_path(directory, filename):
     base, ext = os.path.splitext(filename)
@@ -241,59 +93,8 @@ def get_unique_file_path(directory, filename):
         return unique_path
 
     counter = 1
-    unique_path = os.path.join(directory, f"{base}({counter}){ext}")
-
-    while (os.path.exists(unique_path)):
-        counter += 1
+    while os.path.exists(unique_path):
         unique_path = os.path.join(directory, f"{base}({counter}){ext}")
+        counter += 1
 
     return unique_path
-
-@csrf_exempt
-@require_http_methods(["POST"])
-def handle_submission(request, key, view_type):
-    model_classes = {
-        'first': First,
-        'seven': Seven,
-        'month': Month,
-        'twomonth': TwoMonth,
-        'threemonth': ThreeMonth
-    }
-
-    model_class = model_classes.get(view_type)
-    if not model_class:
-        return HttpResponse('Invalid view type', status=400)
-
-    obj = get_object_or_404(model_class, id=key)
-    for field in obj._meta.fields:
-        if field.name in request.POST:
-            setattr(obj, field.name, request.POST[field.name])
-    obj.save()
-
-    return HttpResponse('<center><h1>感謝回覆</h1></center>', status=200)
-
-def home_view(request, name):
-    mains = Main.objects.filter(lineid=name)
-    context = {'first_key': mains.first().first_key if mains.exists() else None}
-    return render(request, 'first.html', context)
-
-def index_view(request, name):
-    mains = Main.objects.filter(lineid=name)
-    context = {'seven_key': mains.first().seven_key if mains.exists() else None}
-    return render(request, 'seven.html', context)
-
-def a3060_view(request, name):
-    mains = Main.objects.filter(lineid=name)
-    context = {
-        'main': mains.first(),
-        'TwoMonth_key': mains.first().twomonth_key if mains.exists() else None
-    }
-    return render(request, '3060.html', context)
-
-def a90_view(request, name):
-    mains = Main.objects.filter(lineid=name)
-    context = {
-        'main': mains.first(),
-        'ThreeMonth_key': mains.first().threemonth_key if mains.exists() else None
-    }
-    return render(request, '90.html', context)
